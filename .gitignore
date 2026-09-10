@@ -1,18 +1,39 @@
-# Dependencies and build products
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Node / frontend
 **/node_modules/
 **/dist/
+**/build/
 **/.vite/
+**/.cache/
+**/.pnpm-store/
+**/.vercel/
+**/.netlify/
+**/coverage/
+**/*.tsbuildinfo
+**/*.log
+**/*-debug.log*
+**/logs/
 
-# Secrets: examples are allowed, real values are not
+# Environment files
 **/.env
-**/.env.local
-**/.env.*.local
+**/.env.*
 !**/.env.example
-supabase/.env.functions.*
 !supabase/.env.functions.example
+supabase/.env.functions.*
 
-# Local Supabase / Deno tooling
+# Supabase local artifacts
 supabase/.temp/
 supabase/.branches/
-coverage/
-*.log
+supabase/.output/
+supabase/.logs/
+
+# Misc
+*.pid
+*.tmp
