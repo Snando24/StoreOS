@@ -1,0 +1,14 @@
+[functions.health]
+verify_jwt = false
+
+[functions.catalog]
+verify_jwt = false
+
+[functions.create-order]
+verify_jwt = false
+
+[functions.admin-upload-product-image]
+verify_jwt = false
+
+[functions.expire-reservations]
+verify_jwt = false

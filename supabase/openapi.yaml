@@ -1,0 +1,139 @@
+openapi: 3.1.0
+info:
+  title: Storefront SaaS API
+  version: 0.1.0
+  description: >-
+    Contrato de borde para Edge Functions. Los endpoints con x-status planned
+    no existen todavía y no deben consumirse desde la UI.
+servers:
+  - url: https://{project-ref}.supabase.co/functions/v1
+    variables:
+      project-ref:
+        default: your-project-ref
+paths:
+  /health:
+    get:
+      x-status: implemented
+      summary: Comprueba la disponibilidad de Edge Functions sin depender de PostgreSQL
+      responses:
+        '200': { description: Function desplegada y activa }
+  /catalog:
+    post:
+      x-status: implemented
+      summary: Obtiene catálogo publicado de una tienda
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [tenantSlug]
+              properties:
+                tenantSlug: { $ref: '#/components/schemas/TenantSlug' }
+      responses:
+        '200':
+          description: Productos publicados con URL de imagen firmada de corta duración.
+        '400': { description: Tenant inválido }
+  /create-order:
+    post:
+      x-status: implemented
+      summary: Crea un pedido invitado y reserva inventario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequest'
+      responses:
+        '201': { description: Pedido creado o devuelto por idempotencia }
+        '400': { description: Validación o producto no disponible }
+        '403': { description: Verificación humana fallida }
+        '409': { description: Sin stock }
+        '429': { description: Límite de peticiones excedido }
+  /admin-upload-product-image:
+    post:
+      x-status: implemented
+      security: [{ bearerAuth: [] }]
+      summary: Sube una imagen validada de un producto
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [tenantSlug, productId, image]
+              properties:
+                tenantSlug: { $ref: '#/components/schemas/TenantSlug' }
+                productId: { type: string, format: uuid }
+                image: { type: string, format: binary }
+      responses:
+        '201': { description: Imagen registrada }
+        '401': { description: Sesión ausente o inválida }
+        '403': { description: Sin membresía del tenant }
+  /admin/orders:
+    get:
+      x-status: planned
+      security: [{ bearerAuth: [] }]
+      summary: Lista pedidos del tenant autenticado
+      responses:
+        '200': { description: Pedidos paginados, solo del tenant autorizado }
+  /admin/onboarding:
+    post:
+      x-status: planned
+      security: [{ bearerAuth: [] }]
+      summary: Crea/configura la tienda y evalúa sus límites de plan
+      responses:
+        '201': { description: Tenant creado y onboarding actualizado }
+  /expire-reservations:
+    post:
+      x-status: implemented
+      summary: Operación programada; requiere secreto de cron, no JWT de usuario
+      responses:
+        '200': { description: Reservas vencidas liberadas }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    TenantSlug:
+      type: string
+      pattern: '^[a-z0-9]+(?:-[a-z0-9]+)*$'
+      maxLength: 80
+    CreateOrderRequest:
+      type: object
+      required: [tenantSlug, idempotencyKey, customer, delivery, payment, items]
+      properties:
+        tenantSlug: { $ref: '#/components/schemas/TenantSlug' }
+        idempotencyKey: { type: string, minLength: 1, maxLength: 200 }
+        customer:
+          type: object
+          required: [name, phone]
+          properties:
+            name: { type: string, maxLength: 120 }
+            phone: { type: string, maxLength: 32 }
+            email: { type: string, format: email, maxLength: 254 }
+            documentNumber: { type: string, maxLength: 32 }
+        delivery:
+          type: object
+          required: [method]
+          properties:
+            method: { type: string, enum: [pickup, shipping] }
+            address: { type: string, maxLength: 300 }
+            district: { type: string, maxLength: 100 }
+        payment:
+          type: object
+          required: [method]
+          properties:
+            method: { type: string, enum: [yape, plin, transfer] }
+        items:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items:
+            type: object
+            required: [variantId, quantity]
+            properties:
+              variantId: { type: string, format: uuid }
+              quantity: { type: integer, minimum: 1, maximum: 20 }

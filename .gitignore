@@ -1,0 +1,18 @@
+# Dependencies and build products
+**/node_modules/
+**/dist/
+**/.vite/
+
+# Secrets: examples are allowed, real values are not
+**/.env
+**/.env.local
+**/.env.*.local
+!**/.env.example
+supabase/.env.functions.*
+!supabase/.env.functions.example
+
+# Local Supabase / Deno tooling
+supabase/.temp/
+supabase/.branches/
+coverage/
+*.log
